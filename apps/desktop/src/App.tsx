@@ -24,7 +24,12 @@ function App() {
   const renderPage = () => {
     switch (route.name) {
       case 'Home':
-        return <HomePage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
+        return (
+          <HomePage
+            onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })}
+            onViewAll={() => setRoute({ name: 'Anime' })}
+          />
+        );
       case 'Anime':
         return <AnimePage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
       case 'Manga':
@@ -56,6 +61,7 @@ function App() {
             providerId={route.providerId}
             onBack={() => setRoute({ name: 'Anime' })}
             onPlayEpisode={(episodeUrl, providerId) => setRoute({ name: 'VideoPlayer', episodeUrl, providerId })}
+            onNavigateAnime={(animeUrl, animeProviderId) => setRoute({ name: 'AnimeDetail', url: animeUrl, providerId: animeProviderId })}
           />
         );
       case 'VideoPlayer':

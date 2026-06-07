@@ -4,6 +4,10 @@
  * same methods expected by the app's ExtensionRegistry.
  */
 
+import { getGenreById } from '../../constants/animeGenres';
+import { extractSeasonNumber } from '../../utils/seasonUtils';
+import type { RelatedAnime } from '../../services/ExtensionRegistry';
+
 const JIMOV = 'https://jimov-api.vercel.app';
 
 async function get(url: string): Promise<any> {
@@ -55,17 +59,33 @@ export const JiruHubProvider = {
     const res = await get(`/anime/tioanime/filter?q=${encodeURIComponent(query)}&page=${page}`);
     const results = Array.isArray(res) ? res : ((res && res.results) || []);
     return results.map((item: any) => ({
+      id: item.url,
       title: item.name,
       url: item.url,
       poster: item.image || '',
-      desc: item.type || '',
+      type: item.type || 'TV',
+      provider: 'jiruhub',
+    }));
+  },
+
+  async browseByGenre(genreId: string, page = 1) {
+    const genre = getGenreById(genreId);
+    if (!genre) return [];
+    const res = await get(`/anime/tioanime/filter?gen%5B%5D=${encodeURIComponent(genre.tioanime)}&page=${page}`);
+    const results = Array.isArray(res) ? res : ((res && res.results) || []);
+    return results.map((item: any) => ({
+      id: item.url,
+      title: item.name,
+      url: item.url.startsWith('http') ? item.url : `https://tioanime.com${item.url}`,
+      poster: item.image || '',
+      type: item.type || 'TV',
       provider: 'jiruhub',
     }));
   },
 
   async detail(url: string) {
     const res = await get(url);
-    if (!res) return { title: '', poster: '', synopsis: '', episodes: [] };
+    if (!res) return { title: '', poster: '', synopsis: '', episodes: [], relatedSeasons: [] };
     const cover = res.image ? (res.image.url || res.image) : '';
     const episodes = (res.episodes || []).slice().reverse().map((ep: any) => ({
       id: ep.url,
@@ -73,6 +93,21 @@ export const JiruHubProvider = {
       title: `Ep ${ep.number}`,
       url: ep.url,
     }));
+
+    const relatedSeasons: RelatedAnime[] = [];
+    const chronology = res.chronology;
+    const items = Array.isArray(chronology) ? chronology : chronology ? [chronology] : [];
+    for (const item of items) {
+      if (!item?.url || !item?.name) continue;
+      const itemUrl = item.url.startsWith('http') ? item.url : `https://tioanime.com${item.url}`;
+      relatedSeasons.push({
+        title: item.name,
+        url: itemUrl,
+        poster: item.image || '',
+        seasonNumber: extractSeasonNumber(item.name, item.url) ?? undefined,
+      });
+    }
+
     return {
       title: res.name || '',
       synopsis: res.synopsis || '',
@@ -84,6 +119,7 @@ export const JiruHubProvider = {
       episodeCount: episodes.length,
       url,
       provider: 'jiruhub',
+      relatedSeasons,
     };
   },
 

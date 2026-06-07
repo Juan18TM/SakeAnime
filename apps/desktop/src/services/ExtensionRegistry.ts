@@ -7,6 +7,7 @@ import { TioAnimeProvider } from '../extensions/tioanime/index';
 import { TioAnimeNewProvider } from '../extensions/tioanimenew/index';
 import { JiruHubProvider } from '../extensions/jiruhub/index';
 import { AnimeFenix2Provider } from '../extensions/animefenix2/index';
+import { getGenreById } from '../constants/animeGenres';
 
 export type AnimeEntry = {
   id: string;
@@ -15,6 +16,13 @@ export type AnimeEntry = {
   poster: string;
   type: string;
   provider: string;
+};
+
+export type RelatedAnime = {
+  title: string;
+  url: string;
+  poster: string;
+  seasonNumber?: number;
 };
 
 export type AnimeDetail = {
@@ -28,6 +36,7 @@ export type AnimeDetail = {
   episodeCount: number;
   url: string;
   provider: string;
+  relatedSeasons?: RelatedAnime[];
 };
 
 export type Episode = {
@@ -53,6 +62,7 @@ export interface AnimeProvider {
   baseUrl?: string;
   latest(page: number): Promise<AnimeEntry[]>;
   search(query: string, page: number): Promise<AnimeEntry[]>;
+  browseByGenre?(genreId: string, page: number): Promise<AnimeEntry[]>;
   detail(url: string): Promise<AnimeDetail>;
   episodes(url: string): Promise<Episode[]>;
   watch(url: string): Promise<VideoSource[]>;
@@ -123,6 +133,25 @@ export class ExtensionRegistry {
       .flatMap(r => r.value);
 
     return items;
+  }
+
+  async browseByGenre(providerId: string, genreId: string, page: number = 1): Promise<AnimeEntry[]> {
+    const genre = getGenreById(genreId);
+    if (!genre) return [];
+
+    if (providerId === 'all') {
+      const providers = this.getActiveProviders().filter(p => p.browseByGenre);
+      const results = await Promise.allSettled(
+        providers.map(p => p.browseByGenre!(genreId, page))
+      );
+      return results
+        .filter((r): r is PromiseFulfilledResult<AnimeEntry[]> => r.status === 'fulfilled')
+        .flatMap(r => r.value);
+    }
+
+    const provider = this.getProvider(providerId);
+    if (!provider?.browseByGenre) return [];
+    return provider.browseByGenre(genreId, page);
   }
 }
 

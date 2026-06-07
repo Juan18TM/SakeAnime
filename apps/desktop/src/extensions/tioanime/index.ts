@@ -4,6 +4,9 @@
  * Language: Spanish (ES)
  */
 
+import { getGenreById } from '../../constants/animeGenres';
+import { parseTioAnimeCronologia } from '../../utils/seasonUtils';
+
 const BASE = 'https://tioanime.com';
 
 // Decode HTML entities like &oacute; -> ó
@@ -88,6 +91,13 @@ export const TioAnimeProvider = {
     return parseCards(html);
   },
 
+  async browseByGenre(genreId: string, page = 1) {
+    const genre = getGenreById(genreId);
+    if (!genre) return [];
+    const html = await get(`${BASE}/directorio?${genre.tioanime}&p=${page}`);
+    return parseCards(html);
+  },
+
   async detail(url: string) {
     const html = await get(url);
 
@@ -111,6 +121,7 @@ export const TioAnimeProvider = {
     while ((gm = gre.exec(html)) !== null) genres.push(decodeHtml(gm[1].trim()));
 
     const episodes = this.parseEpisodes(html, url);
+    const relatedSeasons = parseTioAnimeCronologia(html, BASE);
 
     return {
       title: title ? decodeHtml(title[1].replace(/<[^>]+>/g, '').trim()) : 'Unknown',
@@ -123,6 +134,7 @@ export const TioAnimeProvider = {
       episodeCount: episodes.length,
       url,
       provider: 'tioanime',
+      relatedSeasons,
     };
   },
 

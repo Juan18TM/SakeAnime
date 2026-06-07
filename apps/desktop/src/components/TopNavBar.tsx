@@ -51,19 +51,17 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({ activePage, onNavigate }) 
       } as any}
     >
       <div
-        className="flex items-center h-full px-6"
+        className="grid grid-cols-[auto_1fr_auto] items-center h-full px-6 gap-4"
         style={{ WebkitAppRegion: 'no-drag' } as any}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 mr-10 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center shadow-md shadow-primary/25">
             <span className="text-white font-bold text-xs">S</span>
           </div>
           <span className="text-white font-semibold text-[15px] tracking-tight">SakeAnime</span>
         </div>
 
-        {/* Nav Links */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center justify-center gap-1">
           {navItems.map((item) => (
             <button
               key={item.label}
@@ -81,71 +79,63 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({ activePage, onNavigate }) 
           ))}
         </div>
 
-        {/* Spacer */}
-        <div className="flex-1" />
-
-        {/* Profile Menu */}
-        <div className="flex items-center shrink-0" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-white/5 transition-all duration-150"
-          >
-            <img
-              alt="Profile"
-              className="w-7 h-7 rounded-md object-cover border border-white/10"
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=SakeAnime"
-            />
-            <ChevronDown
-              size={14}
-              className={clsx(
-                'text-gray-400 transition-transform duration-200',
-                menuOpen && 'rotate-180'
-              )}
-            />
-          </button>
-
-          {/* Dropdown */}
-          {menuOpen && (
-            <div
-              className="absolute top-[52px] right-6 w-52 py-1.5 rounded-xl border border-white/8 shadow-2xl shadow-black/50"
-              style={{
-                background: 'rgba(14, 18, 27, 0.95)',
-                backdropFilter: 'blur(24px)',
-              }}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="relative flex items-center" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex items-center gap-2 p-1 pr-2 rounded-lg hover:bg-white/5 transition-all duration-150"
             >
-              {/* User header */}
-              <div className="px-3.5 py-2.5 border-b border-white/6 mb-1">
-                <p className="text-white text-[13px] font-medium">SakeAnime</p>
-                <p className="text-gray-500 text-[11px]">Mi cuenta</p>
+              <img
+                alt="Profile"
+                className="w-7 h-7 rounded-md object-cover border border-white/10"
+                src="https://api.dicebear.com/7.x/avataaars/svg?seed=SakeAnime"
+              />
+              <ChevronDown
+                size={14}
+                className={clsx(
+                  'text-gray-400 transition-transform duration-200',
+                  menuOpen && 'rotate-180'
+                )}
+              />
+            </button>
+
+            {menuOpen && (
+              <div
+                className="absolute top-[calc(100%+8px)] right-0 w-52 py-1.5 rounded-xl border border-white/8 shadow-2xl shadow-black/50"
+                style={{
+                  background: 'rgba(14, 18, 27, 0.95)',
+                  backdropFilter: 'blur(24px)',
+                }}
+              >
+                <div className="px-3.5 py-2.5 border-b border-white/6 mb-1">
+                  <p className="text-white text-[13px] font-medium">SakeAnime</p>
+                  <p className="text-gray-500 text-[11px]">Mi cuenta</p>
+                </div>
+
+                {menuItems.map((item) => (
+                  <button
+                    key={item.action}
+                    onClick={() => handleMenuAction(item.action)}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    <item.icon size={15} className="text-gray-500" />
+                    {item.label}
+                  </button>
+                ))}
+
+                <div className="border-t border-white/6 mt-1 pt-1">
+                  <button
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-gray-300 hover:text-red-400 hover:bg-red-400/5 transition-colors"
+                  >
+                    <LogOut size={15} className="text-gray-500" />
+                    Salir
+                  </button>
+                </div>
               </div>
+            )}
+          </div>
 
-              {/* Menu items */}
-              {menuItems.map((item) => (
-                <button
-                  key={item.action}
-                  onClick={() => handleMenuAction(item.action)}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-                >
-                  <item.icon size={15} className="text-gray-500" />
-                  {item.label}
-                </button>
-              ))}
-
-              <div className="border-t border-white/6 mt-1 pt-1">
-                <button
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2 text-[13px] text-gray-300 hover:text-red-400 hover:bg-red-400/5 transition-colors"
-                >
-                  <LogOut size={15} className="text-gray-500" />
-                  Salir
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Window Controls */}
-        <div className="flex items-center shrink-0 ml-3">
           <WindowControls />
         </div>
       </div>

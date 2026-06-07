@@ -8,6 +8,10 @@
  *                        Netu, Uqload, Mp4Upload, Voex
  */
 
+import { getGenreById } from '../../constants/animeGenres';
+import { extractSeasonNumber, stripSeasonFromTitle, slugFromUrl } from '../../utils/seasonUtils';
+import type { RelatedAnime } from '../../services/ExtensionRegistry';
+
 const BASE_URL = 'https://animefenix2.tv';
 
 async function fetchHTML(url: string, referer: string = BASE_URL): Promise<string> {
@@ -224,6 +228,38 @@ function parseVideoSources(html: string): any[] {
   return sources;
 }
 
+async function discoverRelatedSeasons(slug: string, title: string): Promise<RelatedAnime[]> {
+  const baseSlug = slug
+    .replace(/-(\d+)(?:st|nd|rd|th)-season$/i, '')
+    .replace(/-season-\d+$/i, '');
+
+  const baseTitle = stripSeasonFromTitle(title);
+  if (!baseTitle) return [];
+
+  try {
+    const html = await fetchHTML(`${BASE_URL}/directorio/anime?q=${encodeURIComponent(baseTitle)}&page=1`);
+    const results = parseAnimeCards(html);
+    const seen = new Set<string>();
+    const related: RelatedAnime[] = [];
+
+    for (const r of results) {
+      const rSlug = slugFromUrl(r.url);
+      const sameSeries = rSlug === baseSlug || rSlug.startsWith(`${baseSlug}-`);
+      if (!sameSeries || rSlug === slug || seen.has(r.url)) continue;
+      seen.add(r.url);
+      related.push({
+        title: r.title,
+        url: r.url,
+        poster: r.poster,
+        seasonNumber: extractSeasonNumber(r.title, rSlug) ?? undefined,
+      });
+    }
+    return related;
+  } catch {
+    return [];
+  }
+}
+
 // ─── Provider ───────────────────────────────────────────────────
 
 export const AnimeFenix2Provider = {
@@ -242,6 +278,13 @@ export const AnimeFenix2Provider = {
   async search(query: string, page: number = 1) {
     const q = encodeURIComponent(query);
     const html = await fetchHTML(`${BASE_URL}/directorio/anime?q=${q}&page=${page}`);
+    return parseAnimeCards(html);
+  },
+
+  async browseByGenre(genreId: string, page: number = 1) {
+    const genre = getGenreById(genreId);
+    if (!genre) return [];
+    const html = await fetchHTML(`${BASE_URL}/directorio/anime?genero=${genre.animefenix2}&page=${page}`);
     return parseAnimeCards(html);
   },
 
@@ -269,6 +312,8 @@ export const AnimeFenix2Provider = {
       episodes = parseEpisodes(epHtml, slug);
     } catch {}
 
+    const relatedSeasons = await discoverRelatedSeasons(slug, titleMatch?.[1]?.trim() ?? slug);
+
     return {
       title: titleMatch ? titleMatch[1].trim() : slug,
       synopsis: synopsisMatch ? synopsisMatch[1].replace(/<[^>]+>/g, '').trim() : '',
@@ -281,6 +326,7 @@ export const AnimeFenix2Provider = {
       episodeCount: episodes.length,
       url,
       provider: 'animefenix2',
+      relatedSeasons,
     };
   },
 
