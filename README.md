@@ -68,7 +68,7 @@ apps/desktop/release/SakeAnime Setup 1.0.0.exe
 
 ### 3. Comando para que la gente instale (PowerShell)
 
-Tus usuarios ejecutan en **PowerShell**:
+ ejecutan en **PowerShell**:
 
 ```powershell
 irm https://raw.githubusercontent.com/Juan18TM/SakeAnime/main/scripts/install.ps1 | iex
@@ -78,7 +78,7 @@ Eso descarga el instalador de la última release y lo ejecuta.
 
 ### Alternativa manual
 
-Los usuarios también pueden ir a **GitHub → Releases** y descargar el `.exe` directamente.
+ pueden ir a **GitHub → Releases** y descargar el `.exe` directamente.
 
 ## Project Structure
 
