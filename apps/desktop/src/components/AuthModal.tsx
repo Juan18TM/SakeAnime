@@ -16,6 +16,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const { signIn, signUp, loading } = useAuthStore();
 
   if (!open) return null;
@@ -23,6 +24,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     if (mode === 'login') {
       const result = await signIn(email, password);
@@ -38,6 +40,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
       const result = await signUp(email, password, username || email.split('@')[0]);
       if (result.error) {
         setError(result.error);
+        return;
+      }
+      if (result.needsConfirmation) {
+        setSuccess('Cuenta creada. Revisa tu correo para confirmar tu email, luego inicia sesión.');
+        setEmail('');
+        setPassword('');
+        setUsername('');
         return;
       }
     }
@@ -134,6 +143,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
           {error && (
             <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
               {error}
+            </p>
+          )}
+
+          {success && (
+            <p className="text-sm text-gray-300">
+              {success}
             </p>
           )}
 

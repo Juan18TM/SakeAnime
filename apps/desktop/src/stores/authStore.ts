@@ -11,7 +11,7 @@ interface AuthState {
   initialized: boolean;
   init: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, username: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, username: string) => Promise<{ error: string | null; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -75,9 +75,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ loading: false });
       return { error: error.message };
     }
+    // Si Supabase requiere confirmación de email, cerrar sesión y avisar
+    if (data.user && !data.session) {
+      set({ loading: false });
+      return { error: null, needsConfirmation: true };
+    }
     const profile = data.user ? await fetchProfile(data.user.id) : null;
     set({ user: data.user, session: data.session, profile, loading: false });
-    return { error: null };
+    return { error: null, needsConfirmation: false };
   },
 
   signOut: async () => {
