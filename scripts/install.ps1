@@ -1,47 +1,45 @@
-#Requires -Version 5.1
-<#
-  Instala SakeAnime en Windows desde la última release de GitHub.
+# SakeAnime Installer Script
+# Ejecuta: irm https://raw.githubusercontent.com/Juan18TM/SakeAnime/main/scripts/install.ps1 | iex
 
-  Uso (PowerShell):
-    irm https://raw.githubusercontent.com/Juan18TM/SakeAnime/main/scripts/install.ps1 | iex
+$repo = "Juan18TM/SakeAnime"
+$releaseUrl = "https://api.github.com/repos/$repo/releases/latest"
+$downloadDir = "$env:TEMP\SakeAnime"
 
-  O descargando el script:
-    .\install.ps1 -RepoOwner Juan18TM -RepoName SakeAnime
-#>
-param(
-  [string]$RepoOwner = "Juan18TM",
-  [string]$RepoName = "SakeAnime",
-  [string]$AppName = "SakeAnime"
-)
+Write-Host "Buscando ultima version de SakeAnime..." -ForegroundColor Cyan
 
-$ErrorActionPreference = "Stop"
-
-function Write-Step([string]$Message) {
-  Write-Host $Message -ForegroundColor Cyan
+try {
+    $release = Invoke-RestMethod -Uri $releaseUrl -Headers @{ "User-Agent" = "SakeAnime-Installer" }
+} catch {
+    Write-Host "Error al obtener la informacion de la release." -ForegroundColor Red
+    exit 1
 }
 
-Write-Step "Buscando la última versión de $AppName..."
+$asset = $release.assets | Where-Object { $_.name -match "\.exe$" } | Select-Object -First 1
 
-$headers = @{ "User-Agent" = "$AppName-Installer" }
-$release = Invoke-RestMethod `
-  -Uri "https://api.github.com/repos/$RepoOwner/$RepoName/releases/latest" `
-  -Headers $headers
-
-$asset = $release.assets | Where-Object { $_.name -match "Setup.*\.exe$" } | Select-Object -First 1
 if (-not $asset) {
-  throw "No se encontró el instalador (.exe) en la release $($release.tag_name)."
+    Write-Host "No se encontro un archivo .exe en la release." -ForegroundColor Red
+    exit 1
 }
 
-$installerPath = Join-Path $env:TEMP "$AppName-Setup.exe"
+Write-Host "Version: $($release.tag_name)" -ForegroundColor Green
+Write-Host "Descargando: $($asset.name)..." -ForegroundColor Cyan
 
-Write-Step "Descargando $($asset.name)..."
-Invoke-WebRequest `
-  -Uri $asset.browser_download_url `
-  -OutFile $installerPath `
-  -Headers $headers
+if (-not (Test-Path $downloadDir)) {
+    New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
+}
 
-Write-Step "Ejecutando instalador..."
-Start-Process -FilePath $installerPath -Wait
+$installerPath = Join-Path $downloadDir $asset.name
 
-Write-Host ""
-Write-Host "Listo. Abre $AppName desde el menú Inicio o el escritorio." -ForegroundColor Green
+try {
+    Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installerPath -Headers @{ "User-Agent" = "SakeAnime-Installer" }
+} catch {
+    Write-Host "Error al descargar el instalador." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "Descarga completada." -ForegroundColor Green
+Write-Host "Iniciando instalacion..." -ForegroundColor Cyan
+
+Start-Process -FilePath $installerPath
+
+Write-Host "El instalador se ha abierto. Sigue las instrucciones en pantalla." -ForegroundColor Green
