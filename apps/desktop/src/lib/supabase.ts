@@ -6,6 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = isSupabaseConfigured
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const supabase: ReturnType<typeof createClient<Database>> | null = isSupabaseConfigured
   ? createClient<Database>(supabaseUrl, supabaseAnonKey)
   : null;

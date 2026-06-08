@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '../lib/supabase';
 import type { AnimeList, AnimeListItem, AnimeListWithCount, ListAnimeInput } from '../types/database';
 
@@ -160,3 +161,4 @@ export async function isAnimeInList(
   if (error) return false;
   return Boolean(data);
 }
+

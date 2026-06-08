@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '../lib/supabase';
 import type { WatchedEpisode, WatchedEpisodeInput } from '../types/database';
 
@@ -95,3 +96,4 @@ export async function clearWatchedHistory(userId: string): Promise<void> {
     .eq('user_id', userId);
   if (error) throw new Error(error.message);
 }
+

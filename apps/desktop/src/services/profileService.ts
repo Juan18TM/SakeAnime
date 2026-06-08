@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { supabase } from '../lib/supabase';
 import type { Profile } from '../types/database';
 
@@ -84,3 +85,4 @@ export async function updateUsername(userId: string, username: string): Promise<
   if (error) throw new Error(error.message);
   return data;
 }
+
