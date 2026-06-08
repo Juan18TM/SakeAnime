@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowLeft, Loader2, AlertCircle, Bug } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle, Bug, Check } from 'lucide-react';
 import { extensionRegistry } from '../services/ExtensionRegistry';
 import { extractStream } from '../services/VideoExtractor';
+import { useAuthStore } from '../stores/authStore';
+import { isEpisodeWatched, markEpisodeWatched, unmarkEpisodeWatched } from '../services/watchedService';
+import { AuthModal } from '../components/AuthModal';
+import clsx from 'clsx';
 import Hls from 'hls.js';
 
 interface VideoSource {
@@ -18,10 +22,16 @@ interface ExtractedStream {
 interface VideoPlayerProps {
   episodeUrl: string;
   providerId: string;
+  anime: { url: string; title: string; poster: string };
+  episode: { number: number; title: string };
   onBack: () => void;
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId, onBack }) => {
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId, anime, episode, onBack }) => {
+  const { user } = useAuthStore();
+  const [watched, setWatched] = useState(false);
+  const [watchedLoading, setWatchedLoading] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusText, setStatusText] = useState('Obteniendo servidores...');
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +50,43 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId
 
   const addDebugLog = (server: string, url: string, logs: string[]) => {
     setDebugLogs(prev => [...prev, { server, url, logs }]);
+  };
+
+  useEffect(() => {
+    if (!user) {
+      setWatched(false);
+      return;
+    }
+    isEpisodeWatched(user.id, episodeUrl, providerId).then(setWatched);
+  }, [user, episodeUrl, providerId]);
+
+  const toggleWatched = async () => {
+    if (!user) {
+      setAuthOpen(true);
+      return;
+    }
+    setWatchedLoading(true);
+    try {
+      if (watched) {
+        await unmarkEpisodeWatched(user.id, episodeUrl, providerId);
+        setWatched(false);
+      } else {
+        await markEpisodeWatched(user.id, {
+          episodeUrl,
+          providerId,
+          animeUrl: anime.url,
+          animeTitle: anime.title,
+          animePoster: anime.poster,
+          episodeNumber: episode.number,
+          episodeTitle: episode.title,
+        });
+        setWatched(true);
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setWatchedLoading(false);
+    }
   };
 
   const tryNextServer = useCallback(async (list: VideoSource[], index: number): Promise<boolean> => {
@@ -216,12 +263,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId
         >
           <ArrowLeft size={20} />
         </button>
-        <button
-          onClick={() => setShowDebug(!showDebug)}
-          className={`p-3 rounded-xl backdrop-blur-md transition-all pointer-events-auto active:scale-95 border border-white/10 ${showDebug ? 'bg-primary text-white' : 'bg-black/40 text-white hover:bg-black/60'}`}
-        >
-          <Bug size={20} />
-        </button>
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <button
+            onClick={toggleWatched}
+            disabled={watchedLoading}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-2.5 rounded-xl backdrop-blur-md transition-all active:scale-95 border text-sm font-semibold',
+              watched
+                ? 'bg-green-500/20 border-green-500/40 text-green-400 hover:bg-green-500/30'
+                : 'bg-black/40 border-white/10 text-white hover:bg-black/60'
+            )}
+          >
+            {watchedLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Check size={16} strokeWidth={watched ? 3 : 2} />
+            )}
+            {watched ? 'Visto' : 'Marcar visto'}
+          </button>
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            className={`p-3 rounded-xl backdrop-blur-md transition-all active:scale-95 border border-white/10 ${showDebug ? 'bg-primary text-white' : 'bg-black/40 text-white hover:bg-black/60'}`}
+          >
+            <Bug size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Debug Panel */}
@@ -288,6 +354,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId
           />
         )}
       </div>
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
 };

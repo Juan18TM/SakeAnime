@@ -7,12 +7,22 @@ import { AnimeDetailPage } from './pages/AnimeDetailPage';
 import { VideoPlayer } from './pages/VideoPlayer';
 import { HistoryPage } from './pages/HistoryPage';
 import { FavoritesPage } from './pages/FavoritesPage';
+import { ListsPage } from './pages/ListsPage';
 import type { Page } from './types';
+import type { Episode } from './services/ExtensionRegistry';
+
+type AnimeContext = { url: string; title: string; poster: string };
 
 type RouteState =
   | { name: Page }
   | { name: 'AnimeDetail'; url: string; providerId: string }
-  | { name: 'VideoPlayer'; episodeUrl: string; providerId: string };
+  | {
+      name: 'VideoPlayer';
+      episodeUrl: string;
+      providerId: string;
+      anime: AnimeContext;
+      episode: Pick<Episode, 'number' | 'title'>;
+    };
 
 function App() {
   const [route, setRoute] = useState<RouteState>({ name: 'Home' });
@@ -41,9 +51,18 @@ function App() {
           </div>
         );
       case 'History':
-        return <HistoryPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
+        return (
+          <HistoryPage
+            onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })}
+            onPlayEpisode={(episodeUrl, providerId, anime, episode) =>
+              setRoute({ name: 'VideoPlayer', episodeUrl, providerId, anime, episode })
+            }
+          />
+        );
       case 'Favorites':
         return <FavoritesPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
+      case 'Lists':
+        return <ListsPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
       case 'Extensions':
         return <ExtensionsPage />;
       case 'Settings':
@@ -60,7 +79,15 @@ function App() {
             url={route.url}
             providerId={route.providerId}
             onBack={() => setRoute({ name: 'Anime' })}
-            onPlayEpisode={(episodeUrl, providerId) => setRoute({ name: 'VideoPlayer', episodeUrl, providerId })}
+            onPlayEpisode={(episode, providerId, anime) =>
+              setRoute({
+                name: 'VideoPlayer',
+                episodeUrl: episode.url,
+                providerId,
+                anime,
+                episode: { number: episode.number, title: episode.title },
+              })
+            }
             onNavigateAnime={(animeUrl, animeProviderId) => setRoute({ name: 'AnimeDetail', url: animeUrl, providerId: animeProviderId })}
           />
         );
@@ -69,7 +96,9 @@ function App() {
           <VideoPlayer
             episodeUrl={route.episodeUrl}
             providerId={route.providerId}
-            onBack={() => setRoute({ name: 'Anime' })}
+            anime={route.anime}
+            episode={route.episode}
+            onBack={() => setRoute({ name: 'AnimeDetail', url: route.anime.url, providerId: route.providerId })}
           />
         );
       default:

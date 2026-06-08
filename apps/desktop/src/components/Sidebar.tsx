@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, Tv, BookOpen, Library, Puzzle, Download, History, User, Settings } from 'lucide-react';
 import clsx from 'clsx';
+import sakeAnimeLogo from '../assets/SakeAnimeLogo.png';
 
 type Page = 'Home' | 'Anime' | 'Manga' | 'Library' | 'Extensions' | 'Downloads' | 'History' | 'Profile' | 'Settings';
 
@@ -31,13 +32,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
       style={{ background: '#0B0F1A' }}
     >
       {/* Brand Logo */}
-      <div className="h-[72px] flex items-center px-6 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-lg shadow-primary/30">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
-          <span className="text-white font-bold text-lg tracking-tight">SakeAnime</span>
-        </div>
+      <div className="h-[72px] flex items-center gap-3 px-5 border-b border-white/5">
+        <img
+          src={sakeAnimeLogo}
+          alt=""
+          className="h-12 w-12 object-cover object-top rounded-md shrink-0"
+          draggable={false}
+        />
+        <span className="text-white font-bold text-lg tracking-tight font-display">
+          SakeAnime
+        </span>
       </div>
 
       {/* Main Nav */}

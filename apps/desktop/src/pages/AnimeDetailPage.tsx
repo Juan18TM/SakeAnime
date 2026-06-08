@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Play, ArrowLeft, Star, Clock, AlertCircle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Play, ArrowLeft, Star, Clock, AlertCircle, Loader2, ChevronLeft, ChevronRight, Heart, Check, ListPlus } from 'lucide-react';
+import clsx from 'clsx';
 import { extensionRegistry } from '../services/ExtensionRegistry';
 import type { AnimeDetail } from '../services/ExtensionRegistry';
 import { getAdjacentSeasons, resolveProviderForUrl } from '../utils/seasonUtils';
 import { PROVIDER_LABELS } from '../utils/browseProviders';
+import { useAuthStore } from '../stores/authStore';
+import { addFavorite, removeFavorite, isFavorite } from '../services/favoritesService';
+import { getWatchedEpisodesForAnime, markEpisodeWatched, unmarkEpisodeWatched } from '../services/watchedService';
+import { AuthModal } from '../components/AuthModal';
+import { AddToListModal } from '../components/AddToListModal';
+import type { Episode } from '../services/ExtensionRegistry';
 
 interface AnimeDetailPageProps {
   url: string;
   providerId: string;
   onBack: () => void;
-  onPlayEpisode: (episodeUrl: string, providerId: string) => void;
+  onPlayEpisode: (episode: Episode, providerId: string, anime: { url: string; title: string; poster: string }) => void;
   onNavigateAnime?: (url: string, providerId: string) => void;
 }
 
@@ -23,6 +30,13 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
   const [detail, setDetail] = useState<AnimeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [favorited, setFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [watchedUrls, setWatchedUrls] = useState<Set<string>>(new Set());
+  const [watchedLoading, setWatchedLoading] = useState<string | null>(null);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -43,6 +57,88 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
 
     fetchDetail();
   }, [url, providerId]);
+
+  useEffect(() => {
+    if (!user) {
+      setFavorited(false);
+      return;
+    }
+    isFavorite(user.id, url, providerId).then(setFavorited);
+  }, [user, url, providerId]);
+
+  useEffect(() => {
+    if (!user) {
+      setWatchedUrls(new Set());
+      return;
+    }
+    getWatchedEpisodesForAnime(user.id, url, providerId)
+      .then((entries) => setWatchedUrls(new Set(entries.map((e) => e.episode_url))))
+      .catch(() => setWatchedUrls(new Set()));
+  }, [user, url, providerId]);
+
+  const toggleWatched = async (ep: Episode, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      setAuthOpen(true);
+      return;
+    }
+    if (!detail) return;
+
+    setWatchedLoading(ep.url);
+    try {
+      if (watchedUrls.has(ep.url)) {
+        await unmarkEpisodeWatched(user.id, ep.url, providerId);
+        setWatchedUrls((prev) => {
+          const next = new Set(prev);
+          next.delete(ep.url);
+          return next;
+        });
+      } else {
+        await markEpisodeWatched(user.id, {
+          episodeUrl: ep.url,
+          providerId,
+          animeUrl: url,
+          animeTitle: detail.title,
+          animePoster: detail.poster,
+          episodeNumber: ep.number,
+          episodeTitle: ep.title,
+        });
+        setWatchedUrls((prev) => new Set(prev).add(ep.url));
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setWatchedLoading(null);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      setAuthOpen(true);
+      return;
+    }
+    if (!detail) return;
+
+    setFavoriteLoading(true);
+    try {
+      if (favorited) {
+        await removeFavorite(user.id, url, providerId);
+        setFavorited(false);
+      } else {
+        await addFavorite(user.id, {
+          url,
+          providerId,
+          title: detail.title,
+          poster: detail.poster,
+        });
+        setFavorited(true);
+      }
+    } catch {
+      // silencioso — el usuario puede reintentar
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   const seasons = useMemo(() => {
     if (!detail) return { previous: undefined, next: undefined, all: [] };
@@ -100,12 +196,49 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
             <img src={detail.poster} alt={detail.title} className="w-full h-full object-cover" />
           </div>
           <button
-            onClick={() => detail.episodes.length > 0 && onPlayEpisode(detail.episodes[0].url, providerId)}
+            onClick={() =>
+              detail.episodes.length > 0 &&
+              onPlayEpisode(detail.episodes[0], providerId, {
+                url,
+                title: detail.title,
+                poster: detail.poster,
+              })
+            }
             disabled={detail.episodes.length === 0}
             className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold shadow-primary-glow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Play size={18} fill="currentColor" />
             Ver primer episodio
+          </button>
+          <button
+            onClick={toggleFavorite}
+            disabled={favoriteLoading}
+            className={clsx(
+              'w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-95 border',
+              favorited
+                ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/15'
+                : 'bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/8'
+            )}
+          >
+            {favoriteLoading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Heart size={18} fill={favorited ? 'currentColor' : 'none'} />
+            )}
+            {favorited ? 'En favoritos' : 'Agregar a favoritos'}
+          </button>
+          <button
+            onClick={() => {
+              if (!user) {
+                setAuthOpen(true);
+                return;
+              }
+              setListModalOpen(true);
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-95 border bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/8"
+          >
+            <ListPlus size={18} />
+            Guardar en lista
           </button>
         </div>
 
@@ -247,25 +380,88 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-              {detail.episodes.map(ep => (
-                <button
-                  key={ep.id}
-                  onClick={() => onPlayEpisode(ep.url, providerId)}
-                  className="group flex items-center justify-between p-4 rounded-xl bg-card border border-white/5 hover:border-primary/40 hover:bg-white/5 transition-all text-left"
-                >
-                  <div className="flex flex-col gap-1 overflow-hidden">
-                    <span className="text-xs text-primary font-bold">EP {ep.number}</span>
-                    <span className="text-sm text-white font-medium truncate">{ep.title}</span>
+              {detail.episodes.map(ep => {
+                const isWatched = watchedUrls.has(ep.url);
+                const isToggling = watchedLoading === ep.url;
+                return (
+                  <div
+                    key={ep.id}
+                    className={clsx(
+                      'group flex items-center justify-between p-4 rounded-xl bg-card border transition-all',
+                      isWatched
+                        ? 'border-green-500/30 bg-green-500/5'
+                        : 'border-white/5 hover:border-primary/40 hover:bg-white/5'
+                    )}
+                  >
+                    <button
+                      onClick={() =>
+                        onPlayEpisode(ep, providerId, {
+                          url,
+                          title: detail.title,
+                          poster: detail.poster,
+                        })
+                      }
+                      className="flex flex-col gap-1 overflow-hidden text-left flex-1 min-w-0"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-primary font-bold">EP {ep.number}</span>
+                        {isWatched && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-green-400">Visto</span>
+                        )}
+                      </div>
+                      <span className="text-sm text-white font-medium truncate">{ep.title}</span>
+                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                      <button
+                        onClick={(e) => toggleWatched(ep, e)}
+                        disabled={isToggling}
+                        title={isWatched ? 'Quitar de vistos' : 'Marcar como visto'}
+                        className={clsx(
+                          'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+                          isWatched
+                            ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
+                        )}
+                      >
+                        {isToggling ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Check size={14} strokeWidth={isWatched ? 3 : 2} />
+                        )}
+                      </button>
+                      <button
+                        onClick={() =>
+                          onPlayEpisode(ep, providerId, {
+                            url,
+                            title: detail.title,
+                            poster: detail.poster,
+                          })
+                        }
+                        className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-primary flex items-center justify-center transition-colors"
+                      >
+                        <Play size={14} className="text-white ml-0.5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-white/5 group-hover:bg-primary flex items-center justify-center shrink-0 transition-colors">
-                    <Play size={14} className="text-white ml-0.5" />
-                  </div>
-                </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+      {detail && (
+        <AddToListModal
+          open={listModalOpen}
+          onClose={() => setListModalOpen(false)}
+          anime={{
+            url,
+            providerId,
+            title: detail.title,
+            poster: detail.poster,
+          }}
+        />
+      )}
     </div>
   );
 };

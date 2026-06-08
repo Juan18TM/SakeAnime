@@ -41,12 +41,17 @@ async function waitForVite(baseUrl: string, maxRetries = 40, delay = 500): Promi
 }
 
 function createWindow() {
+  const iconPath = app.isPackaged
+    ? path.join(__dirname, '../dist/SakeAnimeLogo.png')
+    : path.join(__dirname, '../public/SakeAnimeLogo.png');
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 960,
     minHeight: 600,
     titleBarStyle: 'hidden',
+    icon: iconPath,
     backgroundColor: '#080B12',
     webPreferences: {
       preload,
