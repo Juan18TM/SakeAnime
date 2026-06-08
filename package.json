@@ -11,6 +11,7 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:desktop": "npm run dev --workspace=apps/desktop",
+    "pack:win": "npm run pack:win --workspace=@sakeanime/desktop",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
