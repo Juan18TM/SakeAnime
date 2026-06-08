@@ -27,3 +27,33 @@ export async function fetchLatestFromBrowseProviders(page: number): Promise<Anim
     return provider ? provider.latest(page) : Promise.resolve([]);
   });
 }
+
+export function animeEntryKey(entry: AnimeEntry): string {
+  return `${entry.provider}:${entry.url}`;
+}
+
+export function dedupeAnimeEntries(
+  entries: AnimeEntry[],
+  existing: AnimeEntry[] = []
+): AnimeEntry[] {
+  const seen = new Set(existing.map(animeEntryKey));
+  const unique: AnimeEntry[] = [];
+  for (const entry of entries) {
+    const key = animeEntryKey(entry);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(entry);
+  }
+  return unique;
+}
+
+export function mergeAnimeEntries(
+  existing: AnimeEntry[],
+  incoming: AnimeEntry[]
+): { merged: AnimeEntry[]; added: number } {
+  const uniqueIncoming = dedupeAnimeEntries(incoming, existing);
+  return {
+    merged: [...existing, ...uniqueIncoming],
+    added: uniqueIncoming.length,
+  };
+}

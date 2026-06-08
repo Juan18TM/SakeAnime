@@ -237,7 +237,7 @@ async function discoverRelatedSeasons(slug: string, title: string): Promise<Rela
   if (!baseTitle) return [];
 
   try {
-    const html = await fetchHTML(`${BASE_URL}/directorio/anime?q=${encodeURIComponent(baseTitle)}&page=1`);
+    const html = await fetchHTML(`${BASE_URL}/directorio/anime?q=${encodeURIComponent(baseTitle)}&p=1`);
     const results = parseAnimeCards(html);
     const seen = new Set<string>();
     const related: RelatedAnime[] = [];
@@ -271,20 +271,20 @@ export const AnimeFenix2Provider = {
   baseUrl: BASE_URL,
 
   async latest(page: number = 1) {
-    const html = await fetchHTML(`${BASE_URL}/directorio/anime?page=${page}`);
+    const html = await fetchHTML(`${BASE_URL}/directorio/anime?p=${page}`);
     return parseAnimeCards(html);
   },
 
   async search(query: string, page: number = 1) {
     const q = encodeURIComponent(query);
-    const html = await fetchHTML(`${BASE_URL}/directorio/anime?q=${q}&page=${page}`);
+    const html = await fetchHTML(`${BASE_URL}/directorio/anime?q=${q}&p=${page}`);
     return parseAnimeCards(html);
   },
 
   async browseByGenre(genreId: string, page: number = 1) {
     const genre = getGenreById(genreId);
     if (!genre) return [];
-    const html = await fetchHTML(`${BASE_URL}/directorio/anime?genero=${genre.animefenix2}&page=${page}`);
+    const html = await fetchHTML(`${BASE_URL}/directorio/anime?genero=${genre.animefenix2}&p=${page}`);
     return parseAnimeCards(html);
   },
 

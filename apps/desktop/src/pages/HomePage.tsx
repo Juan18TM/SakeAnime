@@ -1,20 +1,60 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Plus, ChevronRight, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Play, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import type { AnimeEntry } from '../services/ExtensionRegistry';
-import { fetchLatestFromBrowseProviders, PROVIDER_LABELS } from '../utils/browseProviders';
+import { fetchLatestFromBrowseProviders, mergeAnimeEntries, dedupeAnimeEntries, PROVIDER_LABELS, animeEntryKey } from '../utils/browseProviders';
+import { extensionRegistry } from '../services/ExtensionRegistry';
 
 const INITIAL_COUNT = 10;
+const HERO_INTERVAL_MS = 5000;
 
 export const HomePage: React.FC<{
   onAnimeSelect?: (url: string, providerId: string) => void;
   onViewAll?: () => void;
 }> = ({ onAnimeSelect, onViewAll }) => {
   const [latestAnime, setLatestAnime] = useState<AnimeEntry[]>([]);
-  const [heroAnime, setHeroAnime] = useState<AnimeEntry | null>(null);
+  const [featuredList, setFeaturedList] = useState<AnimeEntry[]>([]);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [heroSynopsis, setHeroSynopsis] = useState<string | null>(null);
+  const [heroBackdrop, setHeroBackdrop] = useState<string | null>(null);
+  const [isHeroHovering, setIsHeroHovering] = useState(false);
+  const [isHeroHolding, setIsHeroHolding] = useState(false);
+  const slideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slideDeadlineRef = useRef(0);
+  const lastHeroIndexRef = useRef(0);
+  const heroDetailCacheRef = useRef<Map<string, { synopsis: string; poster: string }>>(new Map());
+
+  const isHeroPaused = isHeroHovering || isHeroHolding;
+
+  const fetchHeroDetail = useCallback(async (entry: AnimeEntry) => {
+    const key = animeEntryKey(entry);
+    const cached = heroDetailCacheRef.current.get(key);
+    if (cached) return cached;
+
+    const provider = extensionRegistry.getProvider(entry.provider);
+    const fallback = { synopsis: '', poster: entry.poster };
+    if (!provider) {
+      heroDetailCacheRef.current.set(key, fallback);
+      return fallback;
+    }
+
+    try {
+      const detail = await provider.detail(entry.url);
+      const result = {
+        synopsis: detail.synopsis?.trim() || '',
+        poster: detail.poster?.trim() || entry.poster,
+      };
+      heroDetailCacheRef.current.set(key, result);
+      return result;
+    } catch {
+      heroDetailCacheRef.current.set(key, fallback);
+      return fallback;
+    }
+  }, []);
 
   const loadPage = useCallback(async (pg: number, append: boolean) => {
     if (append) setLoadingMore(true);
@@ -24,15 +64,24 @@ export const HomePage: React.FC<{
       const data = await fetchLatestFromBrowseProviders(pg);
 
       if (!append) {
-        if (data.length > 0) {
-          setHeroAnime(data[0]);
-          setLatestAnime(data.slice(1, 1 + INITIAL_COUNT));
+        const unique = dedupeAnimeEntries(data);
+        if (unique.length > 0) {
+          setFeaturedList(unique);
+          setHeroIndex(0);
+          setLatestAnime(unique.slice(0, INITIAL_COUNT));
+        } else {
+          setFeaturedList([]);
+          setHeroIndex(0);
+          setLatestAnime([]);
         }
+        setHasMore(unique.length >= 8);
       } else {
-        setLatestAnime(prev => [...prev, ...data]);
+        setLatestAnime(prev => {
+          const { merged, added } = mergeAnimeEntries(prev, data);
+          setHasMore(added > 0 && data.length > 0);
+          return merged;
+        });
       }
-
-      setHasMore(data.length >= 8);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -43,6 +92,112 @@ export const HomePage: React.FC<{
     loadPage(1, false);
   }, [loadPage]);
 
+  const goToSlide = useCallback((index: number, direction: 'next' | 'prev') => {
+    setSlideDirection(direction);
+    setHeroIndex(index);
+  }, []);
+
+  const goNext = useCallback(() => {
+    if (featuredList.length <= 1) return;
+    goToSlide((heroIndex + 1) % featuredList.length, 'next');
+  }, [featuredList.length, heroIndex, goToSlide]);
+
+  const goPrev = useCallback(() => {
+    if (featuredList.length <= 1) return;
+    goToSlide((heroIndex - 1 + featuredList.length) % featuredList.length, 'prev');
+  }, [featuredList.length, heroIndex, goToSlide]);
+
+  useEffect(() => {
+    const onMouseUp = () => setIsHeroHolding(false);
+    window.addEventListener('mouseup', onMouseUp);
+    return () => window.removeEventListener('mouseup', onMouseUp);
+  }, []);
+
+  useEffect(() => {
+    if (featuredList.length <= 1) return;
+
+    const clearSlideTimer = () => {
+      if (slideTimerRef.current) {
+        clearTimeout(slideTimerRef.current);
+        slideTimerRef.current = null;
+      }
+    };
+
+    if (lastHeroIndexRef.current !== heroIndex) {
+      lastHeroIndexRef.current = heroIndex;
+      slideDeadlineRef.current = Date.now() + HERO_INTERVAL_MS;
+    }
+
+    if (isHeroPaused) {
+      clearSlideTimer();
+      return clearSlideTimer;
+    }
+
+    const remaining = slideDeadlineRef.current - Date.now();
+
+    if (remaining <= 0) {
+      if (slideDeadlineRef.current === 0) {
+        slideDeadlineRef.current = Date.now() + HERO_INTERVAL_MS;
+        slideTimerRef.current = setTimeout(() => {
+          setSlideDirection('next');
+          setHeroIndex(prev => (prev + 1) % featuredList.length);
+        }, HERO_INTERVAL_MS);
+      } else {
+        setSlideDirection('next');
+        setHeroIndex(prev => (prev + 1) % featuredList.length);
+      }
+      return clearSlideTimer;
+    }
+
+    slideTimerRef.current = setTimeout(() => {
+      setSlideDirection('next');
+      setHeroIndex(prev => (prev + 1) % featuredList.length);
+    }, remaining);
+
+    return clearSlideTimer;
+  }, [featuredList.length, heroIndex, isHeroPaused]);
+
+  const heroAnime = featuredList.length > 0 ? featuredList[heroIndex] : null;
+  const bgAnimClass = slideDirection === 'next' ? 'hero-bg-in-next' : 'hero-bg-in-prev';
+
+  useEffect(() => {
+    if (!heroAnime) {
+      setHeroSynopsis(null);
+      setHeroBackdrop(null);
+      return;
+    }
+
+    let cancelled = false;
+    const key = animeEntryKey(heroAnime);
+    const cached = heroDetailCacheRef.current.get(key);
+
+    if (cached) {
+      setHeroSynopsis(cached.synopsis);
+      setHeroBackdrop(cached.poster);
+    } else {
+      setHeroSynopsis(null);
+      setHeroBackdrop(heroAnime.poster);
+      fetchHeroDetail(heroAnime).then(detail => {
+        if (!cancelled) {
+          setHeroSynopsis(detail.synopsis);
+          setHeroBackdrop(detail.poster);
+        }
+      });
+    }
+
+    featuredList.forEach((entry, i) => {
+      if (i === heroIndex) return;
+      const entryKey = animeEntryKey(entry);
+      if (!heroDetailCacheRef.current.has(entryKey)) {
+        fetchHeroDetail(entry);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [heroAnime, heroIndex, featuredList, fetchHeroDetail]);
+
   const handleLoadMore = () => {
     const next = page + 1;
     setPage(next);
@@ -52,18 +207,53 @@ export const HomePage: React.FC<{
   return (
     <div className="flex flex-col gap-10 pb-12">
       {/* ─── Hero Banner ─── */}
-      <section className="relative w-full h-[55vh] min-h-[420px] max-h-[580px] overflow-hidden bg-surface-container-highest">
+      <section
+        className="relative w-full h-[55vh] min-h-[420px] max-h-[580px] overflow-hidden bg-surface-container-highest group"
+        onMouseEnter={() => setIsHeroHovering(true)}
+        onMouseLeave={() => {
+          setIsHeroHovering(false);
+          setIsHeroHolding(false);
+        }}
+        onMouseDown={() => setIsHeroHolding(true)}
+        onMouseUp={() => setIsHeroHolding(false)}
+      >
         {heroAnime && (
           <>
-            <img
-              src={heroAnime.poster || ''}
-              alt={heroAnime.title}
-              className="absolute inset-0 w-full h-full object-cover opacity-60 blur-sm scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#080B12] via-[#080B12]/80 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#080B12] via-transparent to-transparent" />
+            <div key={`bg-${heroIndex}`} className={`absolute inset-0 ${bgAnimClass}`}>
+              <div className="absolute inset-0 overflow-hidden">
+                <img
+                  src={heroBackdrop || heroAnime.poster || ''}
+                  alt=""
+                  aria-hidden
+                  className="hero-bg-image"
+                />
+              </div>
+              <div className="absolute inset-0 bg-[#080B12]/25" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#080B12]/95 via-[#080B12]/45 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#080B12]/85 via-[#080B12]/15 to-transparent" />
+              <div className="hero-bottom-fade" />
+            </div>
 
-            <div className="absolute bottom-0 left-0 p-10 w-full md:w-3/5 flex flex-col gap-4">
+            {featuredList.length > 1 && (
+              <>
+                <button
+                  onClick={goPrev}
+                  aria-label="Anterior"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full glass flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 hover:border-primary/30 border border-white/10 transition-all duration-200 opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:!opacity-100 active:scale-95"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+                <button
+                  onClick={goNext}
+                  aria-label="Siguiente"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full glass flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 hover:border-primary/30 border border-white/10 transition-all duration-200 opacity-70 md:opacity-0 md:group-hover:opacity-100 hover:!opacity-100 active:scale-95"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              </>
+            )}
+
+            <div key={`content-${heroIndex}`} className="absolute bottom-0 left-0 p-10 w-full md:w-3/5 flex flex-col gap-4 hero-content-in">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-3 py-1 text-xs font-semibold rounded-full bg-primary/20 text-primary uppercase">
                   {PROVIDER_LABELS[heroAnime.provider] ?? heroAnime.provider}
@@ -77,7 +267,17 @@ export const HomePage: React.FC<{
                 {heroAnime.title}
               </h1>
 
-              <div className="flex gap-3 mt-4">
+              <p className="text-white/75 text-sm leading-relaxed line-clamp-3 max-w-2xl drop-shadow-md min-h-[3.75rem]">
+                {heroSynopsis === null ? (
+                  <span className="inline-block h-4 w-64 max-w-full rounded bg-white/10 animate-pulse" />
+                ) : heroSynopsis ? (
+                  heroSynopsis
+                ) : (
+                  <span className="text-white/45 italic">Sin sinopsis disponible.</span>
+                )}
+              </p>
+
+              <div className="flex gap-3 mt-2">
                 <button
                   onClick={() => onAnimeSelect?.(heroAnime.url, heroAnime.provider)}
                   className="flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary-hover text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-primary-glow active:scale-95"
@@ -85,22 +285,38 @@ export const HomePage: React.FC<{
                   <Play size={20} fill="currentColor" />
                   Ver Detalles
                 </button>
-                <button className="flex items-center gap-2 px-6 py-4 glass hover:bg-white/10 text-white rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95">
-                  <Plus size={20} />
-                  Guardar
-                </button>
               </div>
             </div>
 
-            <div className="absolute right-12 bottom-12 w-48 rounded-xl overflow-hidden shadow-2xl border border-white/10 hidden lg:block">
-              <img src={heroAnime.poster || ''} alt="Cover" className="w-full h-full object-cover" />
+            <div key={`poster-${heroIndex}`} className="absolute right-12 bottom-12 w-48 rounded-xl overflow-hidden shadow-2xl border border-white/10 hidden lg:block hero-poster-in">
+              <img src={heroBackdrop || heroAnime.poster || ''} alt="Cover" className="w-full h-full object-cover" />
             </div>
+
+            {featuredList.length > 1 && (
+              <div className="absolute bottom-6 left-10 right-10 flex gap-2 z-20">
+                {featuredList.map((item, i) => (
+                  <button
+                    key={`${item.provider}-${item.id}-${i}`}
+                    onClick={() => goToSlide(i, i > heroIndex ? 'next' : 'prev')}
+                    aria-label={`Ir a ${item.title}`}
+                    className="relative flex-1 h-1 rounded-full bg-white/15 overflow-hidden hover:bg-white/25 transition-colors"
+                  >
+                    {i === heroIndex && (
+                      <span
+                        key={`progress-${heroIndex}`}
+                        className={`absolute inset-0 rounded-full bg-primary hero-progress-bar${isHeroPaused ? ' hero-progress-paused' : ''}`}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
       </section>
 
       {/* ─── Últimos Agregados ─── */}
-      <section className="px-8 flex flex-col gap-5">
+      <section className="px-8 flex flex-col gap-5 relative z-10 -mt-10">
         <div className="flex justify-between items-center">
           <h2 className="text-white font-semibold text-xl">Últimos Agregados</h2>
           <button

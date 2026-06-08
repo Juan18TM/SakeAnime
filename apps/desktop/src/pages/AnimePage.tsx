@@ -3,7 +3,7 @@ import { Search, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { extensionRegistry } from '../services/ExtensionRegistry';
 import type { AnimeEntry } from '../services/ExtensionRegistry';
 import { ANIME_GENRES } from '../constants/animeGenres';
-import { fetchFromBrowseProviders, PROVIDER_LABELS } from '../utils/browseProviders';
+import { fetchFromBrowseProviders, mergeAnimeEntries, dedupeAnimeEntries, PROVIDER_LABELS } from '../utils/browseProviders';
 import clsx from 'clsx';
 
 const SOURCE_FILTERS = [
@@ -86,8 +86,17 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
         }
       }
 
-      setHasMore(data.length >= 15);
-      setResults(prev => append ? [...prev, ...data] : data);
+      if (append) {
+        setResults(prev => {
+          const { merged, added } = mergeAnimeEntries(prev, data);
+          setHasMore(added > 0 && data.length > 0);
+          return merged;
+        });
+      } else {
+        const unique = dedupeAnimeEntries(data);
+        setResults(unique);
+        setHasMore(unique.length >= 15);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Error al cargar anime');
     } finally {

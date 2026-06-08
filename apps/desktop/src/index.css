@@ -79,4 +79,59 @@
   .line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
   .line-clamp-4 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+
+  /* Hero carousel */
+  @keyframes hero-bg-in-next {
+    from { opacity: 0; transform: scale(1.06) translateX(30px); }
+    to { opacity: 1; transform: scale(1) translateX(0); }
+  }
+  @keyframes hero-bg-in-prev {
+    from { opacity: 0; transform: scale(1.06) translateX(-30px); }
+    to { opacity: 1; transform: scale(1) translateX(0); }
+  }
+  @keyframes hero-content-in {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes hero-poster-in {
+    from { opacity: 0; transform: translateX(24px) scale(0.92); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  @keyframes hero-progress {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  .hero-bg-in-next { animation: hero-bg-in-next 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hero-bg-in-prev { animation: hero-bg-in-prev 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hero-content-in { animation: hero-content-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both; }
+  .hero-poster-in { animation: hero-poster-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both; }
+  .hero-progress-bar { animation: hero-progress 5s linear both; transform-origin: left; }
+  .hero-progress-paused { animation-play-state: paused; }
+
+  .hero-bg-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 20%;
+    transform: scale(1.12);
+    filter: blur(10px);
+  }
+
+  .hero-bottom-fade {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 10rem;
+    pointer-events: none;
+    z-index: 5;
+    background: linear-gradient(
+      to top,
+      #080B12 0%,
+      #080B12 18%,
+      rgba(8, 11, 18, 0.92) 42%,
+      rgba(8, 11, 18, 0.55) 68%,
+      transparent 100%
+    );
+  }
 }
