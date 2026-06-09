@@ -42,8 +42,8 @@ async function waitForVite(baseUrl: string, maxRetries = 40, delay = 500): Promi
 
 function createWindow() {
   const iconPath = app.isPackaged
-    ? path.join(__dirname, '../dist/SakeAnimeLogo.png')
-    : path.join(__dirname, '../public/SakeAnimeLogo.png');
+    ? path.join(__dirname, '../dist/SakeAnimeIco.ico')
+    : path.join(__dirname, '../public/SakeAnimeIco.ico');
 
   mainWindow = new BrowserWindow({
     width: 1280,

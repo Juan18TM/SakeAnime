@@ -55,6 +55,7 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "public/**/*",
       "package.json"
     ],
     "win": {
@@ -64,7 +65,8 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "public/SakeAnimeLogo.png"
+      "icon": "public/SakeAnimeIco.ico",
+      "signExecutable": false
     },
     "nsis": {
       "oneClick": false,

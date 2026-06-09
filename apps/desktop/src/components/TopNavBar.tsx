@@ -79,7 +79,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({ activePage, onNavigate }) 
             <img
               src={sakeAnimeLogo}
               alt=""
-              className="h-12 w-12 object-cover object-top rounded-md"
+              className="h-10 w-10 object-contain rounded-md"
               draggable={false}
             />
             <span className="text-white font-semibold text-[16px] tracking-tight font-display">

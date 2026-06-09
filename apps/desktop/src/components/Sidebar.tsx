@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activePage, onNavigate }) => {
         <img
           src={sakeAnimeLogo}
           alt=""
-          className="h-12 w-12 object-cover object-top rounded-md shrink-0"
+          className="h-10 w-10 object-contain rounded-md shrink-0"
           draggable={false}
         />
         <span className="text-white font-bold text-lg tracking-tight font-display">
