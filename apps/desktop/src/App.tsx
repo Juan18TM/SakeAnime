@@ -37,6 +37,9 @@ function App() {
         return (
           <HomePage
             onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })}
+            onPlayEpisode={(episodeUrl, providerId, anime, episode) =>
+              setRoute({ name: 'VideoPlayer', episodeUrl, providerId, anime, episode })
+            }
             onViewAll={() => setRoute({ name: 'Anime' })}
           />
         );

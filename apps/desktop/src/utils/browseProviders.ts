@@ -57,3 +57,27 @@ export function mergeAnimeEntries(
     added: uniqueIncoming.length,
   };
 }
+
+export type LatestEpisode = {
+  id: string;
+  number: number;
+  title: string;
+  url: string;
+  animeTitle: string;
+  poster: string;
+  provider: string;
+};
+
+export async function fetchLatestEpisodes(): Promise<LatestEpisode[]> {
+  const results = await Promise.allSettled(
+    BROWSE_PROVIDER_IDS.map(async id => {
+      const provider = extensionRegistry.getProvider(id);
+      if (!provider?.latestEpisodes) return [];
+      const episodes = await provider.latestEpisodes();
+      return episodes.map(ep => ({ ...ep, provider: id } as LatestEpisode));
+    })
+  );
+  return results
+    .filter(r => r.status === 'fulfilled')
+    .flatMap(r => (r as PromiseFulfilledResult<LatestEpisode[]>).value);
+}

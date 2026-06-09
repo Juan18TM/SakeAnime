@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Play, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import type { AnimeEntry } from '../services/ExtensionRegistry';
-import { fetchLatestFromBrowseProviders, mergeAnimeEntries, dedupeAnimeEntries, PROVIDER_LABELS, animeEntryKey } from '../utils/browseProviders';
+import { fetchLatestFromBrowseProviders, mergeAnimeEntries, dedupeAnimeEntries, PROVIDER_LABELS, animeEntryKey, fetchLatestEpisodes, type LatestEpisode } from '../utils/browseProviders';
 import { extensionRegistry } from '../services/ExtensionRegistry';
 
 const INITIAL_COUNT = 10;
@@ -9,9 +9,11 @@ const HERO_INTERVAL_MS = 5000;
 
 export const HomePage: React.FC<{
   onAnimeSelect?: (url: string, providerId: string) => void;
+  onPlayEpisode?: (episodeUrl: string, providerId: string, anime: { url: string; title: string; poster: string }, episode: { number: number; title: string }) => void;
   onViewAll?: () => void;
-}> = ({ onAnimeSelect, onViewAll }) => {
+}> = ({ onAnimeSelect, onPlayEpisode, onViewAll }) => {
   const [latestAnime, setLatestAnime] = useState<AnimeEntry[]>([]);
+  const [latestEpisodes, setLatestEpisodes] = useState<LatestEpisode[]>([]);
   const [featuredList, setFeaturedList] = useState<AnimeEntry[]>([]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [slideDirection, setSlideDirection] = useState<'next' | 'prev'>('next');
@@ -91,6 +93,10 @@ export const HomePage: React.FC<{
   useEffect(() => {
     loadPage(1, false);
   }, [loadPage]);
+
+  useEffect(() => {
+    fetchLatestEpisodes().then(setLatestEpisodes).catch(() => setLatestEpisodes([]));
+  }, []);
 
   const goToSlide = useCallback((index: number, direction: 'next' | 'prev') => {
     setSlideDirection(direction);
@@ -314,6 +320,43 @@ export const HomePage: React.FC<{
           </>
         )}
       </section>
+
+      {/* ─── Últimos Episodios ─── */}
+      {latestEpisodes.length > 0 && (
+        <section className="px-8 flex flex-col gap-4 relative z-10 -mt-6">
+          <h2 className="text-white font-semibold text-xl">Últimos Episodios</h2>
+          <div className="grid grid-cols-5 gap-2.5">
+            {latestEpisodes.slice(0, 20).map((ep, i) => (
+              <div
+                key={ep.id + '-' + i}
+                onClick={() => onPlayEpisode?.(ep.url, ep.provider, { url: ep.url, title: ep.animeTitle, poster: ep.poster }, { number: ep.number, title: ep.title })}
+                className="group relative rounded-lg overflow-hidden cursor-pointer border border-white/0 hover:border-primary/30 transition-all duration-300"
+                style={{ background: '#181E28' }}
+              >
+                <div className="aspect-video overflow-hidden bg-white/5 relative">
+                  <img
+                    src={ep.poster}
+                    alt={ep.animeTitle}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-primary/90 text-[10px] text-white font-bold">
+                    EP {ep.number}
+                  </div>
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center shadow-primary-glow">
+                      <Play size={18} className="text-white ml-0.5" fill="currentColor" />
+                    </div>
+                  </div>
+                </div>
+                <div className="p-2 flex flex-col gap-0.5">
+                  <p className="text-white text-xs font-semibold line-clamp-1 leading-tight">{ep.animeTitle}</p>
+                  <p className="text-muted text-[10px]">{ep.title}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ─── Últimos Agregados ─── */}
       <section className="px-8 flex flex-col gap-5 relative z-10 -mt-10">

@@ -360,4 +360,71 @@ export const AnimeFenix2Provider = {
     }
     return [];
   },
+
+  async latestEpisodes() {
+    const html = await fetchHTML(BASE_URL);
+    const episodes: Array<{
+      id: string;
+      number: number;
+      title: string;
+      url: string;
+      animeTitle: string;
+      poster: string;
+    }> = [];
+
+    // Estructura real del homepage:
+    // <a href="/ver/slug-N" title="Title Episodio N" class="text-white">
+    //   <img src="poster" alt="title N" ...>
+    //   <h3 class="...truncate">Title</h3>
+    //   <p class="...">Ep. N</p>
+    // </a>
+    const epRegex = /<a\s+href="\/ver\/([^"]+)"[^>]*title="([^"]*)"[^>]*class="text-white">\s*<div[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"[^>]*>[\s\S]*?<h3[^>]*>([^<]+)<\/h3>\s*<p[^>]*>Ep\.\s*(\d+)<\/p>/gi;
+
+    for (const m of html.matchAll(epRegex)) {
+      const slug = m[1];
+      const poster = m[3];
+      const animeTitle = m[4].trim();
+      const num = parseInt(m[5]);
+      if (isNaN(num)) continue;
+
+      const cleanSlug = slug.replace(/-\d+$/, '');
+      episodes.push({
+        id: `${cleanSlug}-${num}`,
+        number: num,
+        title: `Episodio ${num}`,
+        url: BASE_URL + '/ver/' + slug,
+        animeTitle,
+        poster,
+      });
+    }
+
+    // Fallback: patrón más simple
+    if (episodes.length === 0) {
+      const fallbackRegex = /<a\s+href="\/ver\/([^"]+)"[\s\S]*?<img[^>]*src="([^"]+)"[\s\S]*?<h3[^>]*>([^<]+)<\/h3>\s*<p[^>]*>Ep\.\s*(\d+)<\/p>/gi;
+      for (const m of html.matchAll(fallbackRegex)) {
+        const slug = m[1];
+        const poster = m[2];
+        const animeTitle = m[3].trim();
+        const num = parseInt(m[4]);
+        if (isNaN(num)) continue;
+        const cleanSlug = slug.replace(/-\d+$/, '');
+        episodes.push({
+          id: `${cleanSlug}-${num}`,
+          number: num,
+          title: `Episodio ${num}`,
+          url: BASE_URL + '/ver/' + slug,
+          animeTitle,
+          poster,
+        });
+      }
+    }
+
+    // Deduplicar por id
+    const seen = new Set<string>();
+    return episodes.filter(ep => {
+      if (seen.has(ep.id)) return false;
+      seen.add(ep.id);
+      return true;
+    }).slice(0, 20);
+  },
 };

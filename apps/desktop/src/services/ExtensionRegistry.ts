@@ -66,6 +66,14 @@ export interface AnimeProvider {
   detail(url: string): Promise<AnimeDetail>;
   episodes(url: string): Promise<Episode[]>;
   watch(url: string): Promise<VideoSource[]>;
+  latestEpisodes?(): Promise<Array<{
+    id: string;
+    number: number;
+    title: string;
+    url: string;
+    animeTitle: string;
+    poster: string;
+  }>>;
 }
 
 // Registry of all available providers
