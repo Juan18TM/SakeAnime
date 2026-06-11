@@ -81,7 +81,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ open, onClose }) => 
         style={{ background: 'rgba(14, 18, 27, 0.98)' }}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
-          <h2 className="text-white font-semibold">Mi perfil</h2>
+          <h2 className="text-white font-semibold font-display">Mi perfil</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"

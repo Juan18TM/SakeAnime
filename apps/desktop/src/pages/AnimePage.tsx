@@ -3,7 +3,7 @@ import { Search, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { extensionRegistry } from '../services/ExtensionRegistry';
 import type { AnimeEntry } from '../services/ExtensionRegistry';
 import { ANIME_GENRES } from '../constants/animeGenres';
-import { fetchFromBrowseProviders, mergeAnimeEntries, dedupeAnimeEntries, PROVIDER_LABELS } from '../utils/browseProviders';
+import { fetchFromBrowseProviders, mergeAnimeEntries, dedupeAnimeEntries } from '../utils/browseProviders';
 import clsx from 'clsx';
 
 const SOURCE_FILTERS = [
@@ -13,13 +13,14 @@ const SOURCE_FILTERS = [
 ] as const;
 
 export type AnimePageProps = {
-  onAnimeSelect?: (url: string, providerId: string) => void;
+  onAnimeSelect?: (url: string, providerId: string, searchQuery?: string) => void;
   initialProvider?: string;
+  initialSearchQuery?: string;
 };
 
-export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProvider = 'all' }) => {
+export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProvider = 'all', initialSearchQuery }) => {
   const [results, setResults] = useState<AnimeEntry[]>([]);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialSearchQuery || '');
   const [activeProvider, setActiveProvider] = useState<string>(initialProvider);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -152,7 +153,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
     <div className="flex flex-col gap-6 px-8 py-6 pb-12">
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold text-white font-display">{pageTitle}</h1>
-        <p className="text-muted text-sm">{pageSubtitle}</p>
+        <p className="text-muted text-sm font-display">{pageSubtitle}</p>
       </div>
 
       {/* Búsqueda */}
@@ -179,14 +180,14 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
 
       {/* Filtro por fuente */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-muted font-medium uppercase tracking-wide">Fuente</p>
+        <p className="text-xs text-muted font-medium uppercase tracking-wide font-display">Fuente</p>
         <div className="flex gap-2 flex-wrap">
           {SOURCE_FILTERS.map(p => (
             <button
               key={p.id}
               onClick={() => { setActiveProvider(p.id); setPage(1); setResults([]); }}
               className={clsx(
-                'px-4 py-2 rounded-xl text-sm font-medium border transition-all',
+                'px-4 py-2 rounded-xl text-sm font-medium border transition-all font-display',
                 activeProvider === p.id
                   ? 'bg-primary/10 border-primary/50 text-primary'
                   : 'bg-card border-white/8 text-muted hover:text-white hover:border-white/20'
@@ -200,12 +201,12 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
 
       {/* Filtro por género */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-muted font-medium uppercase tracking-wide">Categorías / Géneros</p>
+        <p className="text-xs text-muted font-medium uppercase tracking-wide font-display">Categorías / Géneros</p>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => handleGenreSelect(null)}
             className={clsx(
-              'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all shrink-0',
+              'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all shrink-0 font-display',
               activeGenre === null
                 ? 'bg-primary/10 border-primary/50 text-primary'
                 : 'bg-card border-white/8 text-muted hover:text-white hover:border-white/20'
@@ -218,8 +219,8 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
               key={g.id}
               onClick={() => handleGenreSelect(g.id)}
               className={clsx(
-                'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all shrink-0',
-                activeGenre === g.id
+              'px-3 py-1.5 rounded-lg text-xs font-medium border transition-all shrink-0 font-display',
+              activeGenre === g.id
                   ? 'bg-primary/10 border-primary/50 text-primary'
                   : 'bg-card border-white/8 text-muted hover:text-white hover:border-white/20'
               )}
@@ -246,9 +247,9 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
       {results.length > 0 ? (
         <>
           <p className="text-muted text-sm">{results.length} anime encontrados</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
             {results.map((item, i) => (
-              <AnimeCard key={`${item.provider}-${item.id}-${i}`} item={item} onSelect={onAnimeSelect} />
+              <AnimeCard key={`${item.provider}-${item.id}-${i}`} item={item} onSelect={onAnimeSelect} searchQuery={query} />
             ))}
           </div>
 
@@ -257,7 +258,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
               <button
                 onClick={loadMore}
                 disabled={loading}
-                className="flex items-center gap-2 px-8 py-3 bg-card border border-white/8 hover:border-primary/30 rounded-xl text-sm text-muted hover:text-white transition-all active:scale-95"
+                className="flex items-center gap-2 px-8 py-3 bg-card border border-white/8 hover:border-primary/30 rounded-xl text-sm text-muted hover:text-white transition-all active:scale-95 font-display"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : null}
                 Cargar más
@@ -292,7 +293,7 @@ export const AnimePage: React.FC<AnimePageProps> = ({ onAnimeSelect, initialProv
   );
 };
 
-const AnimeCard: React.FC<{ item: AnimeEntry; onSelect?: (url: string, providerId: string) => void }> = ({ item, onSelect }) => {
+const AnimeCard: React.FC<{ item: AnimeEntry; onSelect?: (url: string, providerId: string, searchQuery?: string) => void; searchQuery?: string }> = ({ item, onSelect, searchQuery }) => {
   const [imgError, setImgError] = useState(false);
   const [posterSrc, setPosterSrc] = useState<string>(item.poster);
 
@@ -303,15 +304,11 @@ const AnimeCard: React.FC<{ item: AnimeEntry; onSelect?: (url: string, providerI
 
   return (
     <div
-      onClick={() => onSelect?.(item.url, item.provider)}
-      className="group relative rounded-xl overflow-hidden cursor-pointer border border-white/0 hover:border-primary/30 transition-all duration-300"
-      style={{ background: '#181E28' }}
+      onClick={() => onSelect?.(item.url, item.provider, searchQuery)}
+      className="group relative rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300"
+      style={{ background: '#181E28', aspectRatio: '2/3' }}
     >
-      <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] text-white/60 font-medium uppercase">
-        {PROVIDER_LABELS[item.provider] ?? item.provider}
-      </div>
-
-      <div className="h-52 overflow-hidden bg-white/5">
+      <div className="absolute inset-0">
         {!imgError && posterSrc ? (
           <img
             src={posterSrc}
@@ -324,12 +321,19 @@ const AnimeCard: React.FC<{ item: AnimeEntry; onSelect?: (url: string, providerI
             {item.title}
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
-      <div className="p-3 flex flex-col gap-1">
-        <p className="text-white text-xs font-medium line-clamp-2 leading-tight">{item.title}</p>
-        {item.type && <span className="text-[10px] text-muted font-medium uppercase">{item.type}</span>}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+      <div className="absolute top-2 left-2 z-10">
+        <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-medium text-white/80 font-display">
+          {item.provider}
+        </span>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col gap-0.5 z-10">
+        <p className="text-white text-sm font-bold line-clamp-2 leading-tight font-display drop-shadow-lg">{item.title}</p>
+        {item.type && <span className="text-[10px] text-white/60 font-medium uppercase font-display">{item.type}</span>}
       </div>
     </div>
   );

@@ -102,7 +102,7 @@ export const HistoryPage: React.FC<{
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-white">Historial</h1>
+        <h1 className="text-xl font-semibold text-white font-display">Historial</h1>
         <button
           onClick={handleClear}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-red-400 hover:bg-red-400/10 transition-all"

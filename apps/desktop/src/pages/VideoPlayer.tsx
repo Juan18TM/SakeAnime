@@ -293,7 +293,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId
       {/* Debug Panel */}
       {showDebug && (
         <div className="absolute top-24 right-6 w-[400px] max-h-[calc(100%-8rem)] bg-black/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 z-40 overflow-y-auto pointer-events-auto shadow-2xl flex flex-col gap-4 text-xs font-mono text-gray-300">
-          <h3 className="text-white font-sans font-bold text-lg mb-2 flex items-center gap-2">
+          <h3 className="text-white font-bold text-lg mb-2 flex items-center gap-2 font-display">
             <Bug size={18} /> Extraction Debugger
           </h3>
           {debugLogs.map((entry, idx) => (
@@ -328,7 +328,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ episodeUrl, providerId
         {!loading && error && (
           <div className="flex flex-col items-center gap-4 max-w-md text-center p-6 bg-card rounded-2xl border border-white/5">
             <AlertCircle className="text-red-500" size={48} />
-            <h3 className="text-xl font-bold text-white">No se pudo reproducir</h3>
+            <h3 className="text-xl font-bold text-white font-display">No se pudo reproducir</h3>
             <p className="text-muted text-sm">{error}</p>
             <button onClick={onBack} className="mt-4 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors">
               Volver atrás

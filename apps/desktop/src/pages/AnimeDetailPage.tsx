@@ -205,7 +205,7 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
               })
             }
             disabled={detail.episodes.length === 0}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold shadow-primary-glow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold shadow-primary-glow transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed font-display"
           >
             <Play size={18} fill="currentColor" />
             Ver primer episodio
@@ -214,7 +214,7 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
             onClick={toggleFavorite}
             disabled={favoriteLoading}
             className={clsx(
-              'w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-95 border',
+              'w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-95 border font-display',
               favorited
                 ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/15'
                 : 'bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/8'
@@ -235,7 +235,7 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
               }
               setListModalOpen(true);
             }}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-95 border bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/8"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold transition-all active:scale-95 border bg-white/5 border-white/10 text-gray-300 hover:text-white hover:bg-white/8 font-display"
           >
             <ListPlus size={18} />
             Guardar en lista
@@ -318,15 +318,15 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
 
           <div className="flex items-center gap-2 flex-wrap">
             {detail.genres.map(g => (
-              <span key={g} className="px-3 py-1 rounded-full text-xs font-medium border border-white/10 bg-card text-muted">
+              <span key={g} className="px-3 py-1 rounded-full text-xs font-medium border border-white/10 bg-card text-muted font-display">
                 {g}
               </span>
             ))}
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold text-white mb-2">Sinopsis</h3>
-            <p className="text-white/70 text-sm leading-relaxed max-w-4xl">
+            <h3 className="text-lg font-semibold text-white mb-2 font-display">Sinopsis</h3>
+            <p className="text-white/70 text-sm leading-relaxed max-w-4xl font-display">
               {detail.synopsis || 'Sin sinopsis disponible para este título.'}
             </p>
           </div>
@@ -334,7 +334,7 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
           {/* Lista de temporadas relacionadas */}
           {(detail.relatedSeasons?.length ?? 0) > 0 && (
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Temporadas</h3>
+              <h3 className="text-lg font-semibold text-white mb-4 font-display">Temporadas</h3>
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {seasons.all.map(season => {
                   const isCurrent = season.url === detail.url;
@@ -375,7 +375,7 @@ export const AnimeDetailPage: React.FC<AnimeDetailPageProps> = ({
 
           <div className="mt-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">Episodios</h3>
+              <h3 className="text-lg font-semibold text-white font-display">Episodios</h3>
               <span className="text-xs text-muted font-medium">{detail.episodes.length} en total</span>
             </div>
 

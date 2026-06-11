@@ -77,7 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onClose }) => {
           <X size={18} />
         </button>
 
-        <h2 className="text-xl font-semibold text-white mb-1">
+        <h2 className="text-xl font-semibold text-white mb-1 font-display">
           {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
         </h2>
         <p className="text-sm text-gray-500 mb-6">

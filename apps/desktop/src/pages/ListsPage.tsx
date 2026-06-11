@@ -173,7 +173,7 @@ export const ListsPage: React.FC<{
             <ArrowLeft size={20} />
           </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-semibold text-white truncate">{selectedList.name}</h1>
+            <h1 className="text-xl font-semibold text-white truncate font-display">{selectedList.name}</h1>
             <p className="text-xs text-gray-500">{selectedList.item_count} anime{selectedList.item_count !== 1 ? 's' : ''}</p>
           </div>
           <button
@@ -230,7 +230,7 @@ export const ListsPage: React.FC<{
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-white">Mis listas</h1>
+        <h1 className="text-xl font-semibold text-white font-display">Mis listas</h1>
         <button
           onClick={() => setShowCreateForm(true)}
           className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/15 text-primary hover:bg-primary/25 transition-all"
@@ -312,7 +312,7 @@ export const ListsPage: React.FC<{
                     </button>
                   </div>
                 ) : (
-                  <h3 className="text-white font-semibold truncate flex-1">{list.name}</h3>
+                  <h3 className="text-white font-semibold truncate flex-1 font-display">{list.name}</h3>
                 )}
                 <div
                   className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"

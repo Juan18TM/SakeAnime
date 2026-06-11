@@ -89,7 +89,7 @@ export const FavoritesPage: React.FC<{ onAnimeSelect?: (url: string, providerId:
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold text-white mb-6">Favoritos</h1>
+      <h1 className="text-xl font-semibold text-white mb-6 font-display">Favoritos</h1>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4">
         {favorites.map((entry) => (
           <div key={entry.id} className="group relative flex flex-col gap-2">

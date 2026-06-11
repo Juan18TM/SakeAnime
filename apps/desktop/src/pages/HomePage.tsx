@@ -273,7 +273,7 @@ export const HomePage: React.FC<{
                 {heroAnime.title}
               </h1>
 
-              <p className="text-white/75 text-sm leading-relaxed line-clamp-3 max-w-2xl drop-shadow-md min-h-[3.75rem]">
+              <p className="text-white/75 text-sm leading-relaxed line-clamp-3 max-w-2xl drop-shadow-md min-h-[3.75rem] font-display">
                 {heroSynopsis === null ? (
                   <span className="inline-block h-4 w-64 max-w-full rounded bg-white/10 animate-pulse" />
                 ) : heroSynopsis ? (
@@ -286,7 +286,7 @@ export const HomePage: React.FC<{
               <div className="flex gap-3 mt-2">
                 <button
                   onClick={() => onAnimeSelect?.(heroAnime.url, heroAnime.provider)}
-                  className="flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary-hover text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-primary-glow active:scale-95"
+                  className="flex items-center gap-2 px-8 py-4 bg-primary hover:bg-primary-hover text-white rounded-xl text-sm font-semibold transition-all duration-200 shadow-primary-glow active:scale-95 font-display"
                 >
                   <Play size={20} fill="currentColor" />
                   Ver Detalles
@@ -324,34 +324,28 @@ export const HomePage: React.FC<{
       {/* ─── Últimos Episodios ─── */}
       {latestEpisodes.length > 0 && (
         <section className="px-8 flex flex-col gap-4 relative z-10 -mt-6">
-          <h2 className="text-white font-semibold text-xl">Últimos Episodios</h2>
-          <div className="grid grid-cols-5 gap-2.5">
+          <h2 className="text-white font-semibold text-xl font-display">Últimos Episodios</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
             {latestEpisodes.slice(0, 20).map((ep, i) => (
               <div
                 key={ep.id + '-' + i}
                 onClick={() => onPlayEpisode?.(ep.url, ep.provider, { url: ep.url, title: ep.animeTitle, poster: ep.poster }, { number: ep.number, title: ep.title })}
-                className="group relative rounded-lg overflow-hidden cursor-pointer border border-white/0 hover:border-primary/30 transition-all duration-300"
-                style={{ background: '#181E28' }}
+                className="group relative rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 aspect-video"
               >
-                <div className="aspect-video overflow-hidden bg-white/5 relative">
-                  <img
-                    src={ep.poster}
-                    alt={ep.animeTitle}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-primary/90 text-[10px] text-white font-bold">
-                    EP {ep.number}
+                  <div className="absolute inset-0">
+                    <img
+                      src={ep.poster}
+                      alt={ep.animeTitle}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                   </div>
-                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-10 h-10 rounded-full bg-primary/90 flex items-center justify-center shadow-primary-glow">
-                      <Play size={18} className="text-white ml-0.5" fill="currentColor" />
-                    </div>
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+                  <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col gap-0.5 z-10">
+                    <p className="text-white text-sm font-bold line-clamp-2 leading-tight font-display drop-shadow-lg">{ep.animeTitle}</p>
+                    <p className="text-white/60 text-[10px] font-display">{ep.title}</p>
                   </div>
-                </div>
-                <div className="p-2 flex flex-col gap-0.5">
-                  <p className="text-white text-xs font-semibold line-clamp-1 leading-tight">{ep.animeTitle}</p>
-                  <p className="text-muted text-[10px]">{ep.title}</p>
-                </div>
               </div>
             ))}
           </div>
@@ -361,10 +355,10 @@ export const HomePage: React.FC<{
       {/* ─── Últimos Agregados ─── */}
       <section className="px-8 flex flex-col gap-5 relative z-10 -mt-10">
         <div className="flex justify-between items-center">
-          <h2 className="text-white font-semibold text-xl">Últimos Agregados</h2>
+          <h2 className="text-white font-semibold text-xl font-display">Últimos Agregados</h2>
           <button
             onClick={onViewAll}
-            className="text-primary hover:text-primary-hover flex items-center gap-1 text-sm font-medium transition-colors"
+            className="text-primary hover:text-primary-hover flex items-center gap-1 text-sm font-medium transition-colors font-display"
           >
             Ver catálogo <ChevronRight size={16} />
           </button>
@@ -384,34 +378,33 @@ export const HomePage: React.FC<{
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
               {latestAnime.map((item, i) => (
                 <div
                   key={`${item.provider}-${item.id}-${i}`}
                   onClick={() => onAnimeSelect?.(item.url, item.provider)}
-                  className="group relative rounded-xl overflow-hidden cursor-pointer border border-white/0 hover:border-primary/30 transition-all duration-300"
-                  style={{ background: '#181E28' }}
+                  className="group relative rounded-2xl overflow-hidden cursor-pointer hover:shadow-xl hover:shadow-primary/10 transition-all duration-300"
+                  style={{ background: '#181E28', aspectRatio: '2/3' }}
                 >
-                  <div className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] text-white/60 font-medium uppercase">
-                    {PROVIDER_LABELS[item.provider] ?? item.provider}
-                  </div>
-
-                  <div className="h-52 overflow-hidden bg-white/5 relative">
+                  <div className="absolute inset-0">
                     <img
                       src={item.poster}
                       alt={item.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/90 flex items-center justify-center shadow-primary-glow">
-                        <Play size={22} className="text-white ml-1" fill="currentColor" />
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="p-3 flex flex-col gap-1">
-                    <p className="text-white text-sm font-semibold line-clamp-2 leading-tight">{item.title}</p>
-                    <p className="text-muted text-[10px] uppercase font-medium mt-1">{item.type || 'Anime'}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+
+                  <div className="absolute top-2 left-2 z-10">
+                    <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] font-medium text-white/80 font-display">
+                      {PROVIDER_LABELS[item.provider] ?? item.provider}
+                    </span>
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 right-0 p-3 flex flex-col gap-0.5 z-10">
+                    <p className="text-white text-sm font-bold line-clamp-2 leading-tight font-display drop-shadow-lg">{item.title}</p>
+                    <p className="text-muted text-[10px] uppercase font-medium mt-1 font-display">{item.type || 'Anime'}</p>
                   </div>
                 </div>
               ))}

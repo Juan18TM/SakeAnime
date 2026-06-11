@@ -121,7 +121,7 @@ export const AddToListModal: React.FC<AddToListModalProps> = ({ open, onClose, a
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
           <div className="flex items-center gap-2">
             <ListPlus size={18} className="text-primary" />
-            <h2 className="text-white font-semibold">Guardar en lista</h2>
+            <h2 className="text-white font-semibold font-display">Guardar en lista</h2>
           </div>
           <button
             onClick={onClose}

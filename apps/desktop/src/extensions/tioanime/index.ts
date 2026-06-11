@@ -94,7 +94,7 @@ export const TioAnimeProvider = {
   async browseByGenre(genreId: string, page = 1) {
     const genre = getGenreById(genreId);
     if (!genre) return [];
-    const html = await get(`${BASE}/directorio?${genre.tioanime}&p=${page}`);
+    const html = await get(`${BASE}/directorio?genero[]=${genre.tioanime}&p=${page}`);
     return parseCards(html);
   },
 

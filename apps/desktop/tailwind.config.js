@@ -29,8 +29,8 @@ export default {
         "on-primary-container": "#FFFFFF",
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        display: ["Sora", "sans-serif"],
+        sans: ["Inter", "Noto Sans JP", "sans-serif"],
+        display: ["Shippori Mincho", "Noto Sans JP", "serif"],
       },
       borderColor: {
         DEFAULT: "rgba(255,255,255,0.08)",

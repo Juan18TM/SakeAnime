@@ -60,7 +60,7 @@ export const ExtensionsPage: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="text-white font-semibold text-lg">{ext.name}</h3>
+                    <h3 className="text-white font-semibold text-lg font-display">{ext.name}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-primary/20 text-primary">
                         {ext.type}

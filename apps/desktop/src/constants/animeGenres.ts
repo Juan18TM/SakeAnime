@@ -8,12 +8,12 @@ export type AnimeGenre = {
 
 export const ANIME_GENRES: AnimeGenre[] = [
   { id: 'accion', label: 'Acción', tioanime: 'accion', animefenix2: 1 },
-  { id: 'aventuras', label: 'Aventuras', tioanime: 'aventuras', animefenix2: 23 },
+  { id: 'aventuras', label: 'Aventuras', tioanime: 'aventura', animefenix2: 23 },
   { id: 'comedia', label: 'Comedia', tioanime: 'comedia', animefenix2: 5 },
   { id: 'drama', label: 'Drama', tioanime: 'drama', animefenix2: 6 },
   { id: 'romance', label: 'Romance', tioanime: 'romance', animefenix2: 3 },
   { id: 'fantasia', label: 'Fantasía', tioanime: 'fantasia', animefenix2: 13 },
-  { id: 'ciencia-ficcion', label: 'Ciencia Ficción', tioanime: 'espacial', animefenix2: 20 },
+  { id: 'ciencia-ficcion', label: 'Ciencia Ficción', tioanime: 'ciencia-ficcion', animefenix2: 20 },
   { id: 'shounen', label: 'Shounen', tioanime: 'shounen', animefenix2: 9 },
   { id: 'shoujo', label: 'Shoujo', tioanime: 'shoujo', animefenix2: 4 },
   { id: 'seinen', label: 'Seinen', tioanime: 'seinen', animefenix2: 7 },

@@ -14,14 +14,18 @@ import type { Episode } from './services/ExtensionRegistry';
 type AnimeContext = { url: string; title: string; poster: string };
 
 type RouteState =
-  | { name: Page }
-  | { name: 'AnimeDetail'; url: string; providerId: string }
+  | { name: Page; searchQuery?: string }
+  | { name: 'AnimeDetail'; url: string; providerId: string; backTo?: Page; searchQuery?: string }
   | {
       name: 'VideoPlayer';
       episodeUrl: string;
       providerId: string;
       anime: AnimeContext;
       episode: Pick<Episode, 'number' | 'title'>;
+      backTo?: 'Home' | 'AnimeDetail';
+      backUrl?: string;
+      backProviderId?: string;
+      backSearchQuery?: string;
     };
 
 function App() {
@@ -38,13 +42,20 @@ function App() {
           <HomePage
             onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })}
             onPlayEpisode={(episodeUrl, providerId, anime, episode) =>
-              setRoute({ name: 'VideoPlayer', episodeUrl, providerId, anime, episode })
+              setRoute({ name: 'VideoPlayer', episodeUrl, providerId, anime, episode, backTo: 'Home' })
             }
             onViewAll={() => setRoute({ name: 'Anime' })}
           />
         );
       case 'Anime':
-        return <AnimePage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
+        return (
+          <AnimePage
+            initialSearchQuery={'searchQuery' in route ? route.searchQuery : undefined}
+            onAnimeSelect={(url, providerId, searchQuery) =>
+              setRoute({ name: 'AnimeDetail', url, providerId, backTo: 'Anime', searchQuery })
+            }
+          />
+        );
       case 'Manga':
         return (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-500">
@@ -56,16 +67,16 @@ function App() {
       case 'History':
         return (
           <HistoryPage
-            onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })}
+            onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId, backTo: 'History' })}
             onPlayEpisode={(episodeUrl, providerId, anime, episode) =>
-              setRoute({ name: 'VideoPlayer', episodeUrl, providerId, anime, episode })
+              setRoute({ name: 'VideoPlayer', episodeUrl, providerId, anime, episode, backTo: 'Home' })
             }
           />
         );
       case 'Favorites':
-        return <FavoritesPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
+        return <FavoritesPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId, backTo: 'Favorites' })} />;
       case 'Lists':
-        return <ListsPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId })} />;
+        return <ListsPage onAnimeSelect={(url, providerId) => setRoute({ name: 'AnimeDetail', url, providerId, backTo: 'Lists' })} />;
       case 'Extensions':
         return <ExtensionsPage />;
       case 'Settings':
@@ -81,7 +92,13 @@ function App() {
           <AnimeDetailPage
             url={route.url}
             providerId={route.providerId}
-            onBack={() => setRoute({ name: 'Anime' })}
+            onBack={() => {
+              if (route.backTo === 'Anime') {
+                setRoute({ name: 'Anime', searchQuery: route.searchQuery });
+              } else {
+                setRoute({ name: 'Home' });
+              }
+            }}
             onPlayEpisode={(episode, providerId, anime) =>
               setRoute({
                 name: 'VideoPlayer',
@@ -89,9 +106,13 @@ function App() {
                 providerId,
                 anime,
                 episode: { number: episode.number, title: episode.title },
+                backTo: route.backTo === 'Anime' ? 'AnimeDetail' : 'Home',
+                backUrl: route.url,
+                backProviderId: route.providerId,
+                backSearchQuery: route.searchQuery,
               })
             }
-            onNavigateAnime={(animeUrl, animeProviderId) => setRoute({ name: 'AnimeDetail', url: animeUrl, providerId: animeProviderId })}
+            onNavigateAnime={(animeUrl, animeProviderId) => setRoute({ name: 'AnimeDetail', url: animeUrl, providerId: animeProviderId, backTo: route.backTo, searchQuery: route.searchQuery })}
           />
         );
       case 'VideoPlayer':
@@ -101,7 +122,15 @@ function App() {
             providerId={route.providerId}
             anime={route.anime}
             episode={route.episode}
-            onBack={() => setRoute({ name: 'AnimeDetail', url: route.anime.url, providerId: route.providerId })}
+            onBack={() => {
+              if (route.backTo === 'Home') {
+                setRoute({ name: 'Home' });
+              } else if (route.backUrl && route.backProviderId) {
+                setRoute({ name: 'AnimeDetail', url: route.backUrl, providerId: route.backProviderId, backTo: route.backTo === 'AnimeDetail' ? 'Anime' : undefined, searchQuery: route.backSearchQuery });
+              } else {
+                setRoute({ name: 'Home' });
+              }
+            }}
           />
         );
       default:
